@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>کادو کادو کادو</title>
+
+  <style>
+    /* ---------- 1) متغیرها ---------- */
+    :root {
+      --bg: #0e0839;
+      --card: #2c2372;
+      --text: #fff8e7;
+      --muted: #b9b3de;
+      --yellow: #0e0839;
+      --teal: #3ddbd9;
+    }
+
+    /* ---------- 2) تنظیمات پایه ---------- */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+    }
+
+    /* ---------- 3) کارت اصلی ---------- */
+    .card {
+      width: 100%;
+      max-width: 520px;
+      background: var(--card);
+      border-radius: 24px;
+      padding: 40px 28px;
+      text-align: center;
+      border: 3px solid var(--yellow);
+      box-shadow: 8px 8px 0 var(--pink);
+    }
+
+    h1 { font-size: 2rem; line-height: 1.2; margin-bottom: 12px; }
+    p  { color: var(--muted); margin-bottom: 24px; font-size: 1.05rem; }
+
+    /* ---------- 4) صفحه‌ها ---------- */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ---------- 5) فرم و دکمه‌ها ---------- */
+    input[type="date"] {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: 2px solid var(--muted);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 999px;
+      padding: 14px 36px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      background: var(--yellow);
+      color: var(--text);
+      transition: transform 0.15s;
+    }
+    button:hover { transform: scale(1.06); }
+    button:focus-visible,
+    input:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+
+    .error { color: var(--pink); min-height: 1.4em; margin: 0 0 12px; font-size: 0.95rem; }
+
+    .big-wish { color: var(--yellow); font-size: 2.2rem; }
+    .wrong-title { color: var(--pink); font-size: 2rem; margin-bottom: 24px; }
+
+    /* ---------- 6) دکمه‌های علاقه‌مندی‌ها (صفحه ۳) ---------- */
+    .favorites {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin: 24px 0;
+    }
+    /* این کلاس بعد از استایل کلی button میاد، پس روش اولویت داره */
+    .fav-btn {
+      background: var(--bg);
+      color: var(--text);
+      border: 2px solid var(--teal);
+      border-radius: 16px;
+      padding: 18px 10px;
+      font-size: 1rem;
+    }
+    .fav-btn .emoji { font-size: 2rem; display: block; margin-bottom: 6px; }
+
+    /* ---------- 7) گالری و اسلایدر (صفحه ۵) ---------- */
+    .gallery-title { font-size: 1.5rem; margin-bottom: 16px; color: var(--yellow); }
+
+    .slider {
+      overflow: hidden;            /* هر چی بیرون کادر باشه دیده نمیشه */
+      border-radius: 16px;
+      background: var(--bg);
+    }
+    .track {
+      display: flex;               /* همه‌ی اسلایدها کنار هم، تو یک ردیف */
+      transition: transform 0.35s ease;
+    }
+    .track img,
+    .slide-fallback {
+      flex: 0 0 100%;              /* هر اسلاید دقیقاً به اندازه‌ی کادر */
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+    }
+    .slide-fallback {
+      display: grid;
+      place-items: center;
+      font-size: 4rem;
+    }
+
+    .slider-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 16px 0 24px;
+    }
+    .arrow {
+      width: 48px;
+      height: 48px;
+      padding: 0;
+      border-radius: 50%;
+      font-size: 1.3rem;
+    }
+    #counter { color: var(--muted); }
+
+    /* ---------- 8) کنفتی ---------- */
+    .confetti {
+      position: fixed;
+      top: -20px;
+      width: 10px;
+      height: 14px;
+      pointer-events: none;
+      animation: fall linear forwards;
+    }
+    @keyframes fall {
+      to { transform: translateY(110vh) rotate(720deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .confetti { display: none; }
+      button, .track { transition: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="card">
+
+    <!-- ===== صفحه ۱: پرسیدن تاریخ تولد ===== -->
+    <section class="screen active" id="screen1">
+      <h1>سلام دوست من یک سوال</h1>
+      <p>تولدت چه روزیه؟</p>
+      <input type="date" id="birthday" aria-label="Your birthday">
+      <div class="error" id="error" role="alert"></div>
+      <button id="next1">بعدی</button>
+    </section>
+
+    <!-- ===== صفحه ۲: شوخی ===== -->
+    <section class="screen" id="screen2">
+      <h1>شوخی کردم از قبل میدونستم</h1>
+      <img src="images/msg70885963-11.jpg" alt="blewh" width="100" height="110">
+      <p>معلومه که یادمه.ادامه بده</p>
+      <button id="next2">بعدی</button>
+    </section>
+
+    <!-- ===== صفحه ۳: تبریک و دکمه‌های علاقه‌مندی‌ها ===== -->
+    <section class="screen" id="screen3">
+      <h1 class="big-wish" id="wish"></h1>
+      <p>عکس چیز هایی که دوست داری👇</p>
+      <div class="favorites" id="favorites"></div>
+      <p>آرزو میکنم امسالت پر از گل های بابونه و چیز های نارنجی باشه 🎂</p>
+    </section>
+
+    <!-- ===== صفحه ۴: تاریخ اشتباه ===== -->
+    <section class="screen" id="screen4">
+      <h1 class="wrong-title" dir="rtl">تو باران نیستی , از سایت برو بیرون!!!!!!</h1>
+      <button id="retry">تلاش مجدد</button>
+    </section>
+
+    <!-- ===== صفحه ۵: گالری با اسلاید ===== -->
+    <section class="screen" id="screen5">
+      <h1 class="gallery-title" id="galleryTitle"></h1>
+
+      <div class="slider" id="slider">
+        <div class="track" id="track"></div>
+      </div>
+
+      <div class="slider-controls">
+        <button class="arrow" id="prevBtn" aria-label="Previous photo">←</button>
+        <span id="counter"></span>
+        <button class="arrow" id="nextBtn" aria-label="Next photo">→</button>
+      </div>
+
+      <button id="backBtn">برگشت</button>
+    </section>
+
+  </main>
+
+  <script>
+    /* ============================================================
+       اینجا رو تغییر بده
+       ============================================================ */
+    const FRIEND_NAME = "Baran";
+
+    // تاریخ تولد درست، به شکل سال-ماه-روز. مثلاً "2000-03-15"
+    const CORRECT_BIRTHDAY = "2009-11-18";
+
+    // برای هر علاقه‌مندی یک لیست عکس بنویس (هر چند تا که خواستی)
+    // اگه عکسی نداشتی بنویس images: []
+    const FAVORITES = [
+      { emoji: "😺", label: "خانوم گربه",  value: "", images: ["images/photo1.jpg", "images/msg70885963-4.jpg", "images/msg70885963-5.jpg", "images/msg70885963-6.jpg", "images/msg70885963-7.jpg", "images/msg70885963-8.jpg"] },
+      { emoji: "🎎", label: "کورالین", value: "",  images: ["images/msg70885963-21.jpg", "images/msg70885963-20.jpg", "images/msg70885963-19.jpg", "images/msg70885963-18.jpg"] },
+      { emoji: "🌼", label: "بابونه", value: "", images: ["images/msg70885963-29.jpg", "images/msg70885963-28.jpg", "images/msg70885963-27.jpg", "images/msg70885963-26.jpg"] },
+      { emoji: "🎨", label: "چیز های نارنجی", value: "", images: ["images/msg70885963-25.jpg", "images/msg70885963-24.jpg", "images/msg70885963-23.jpg", "images/msg70885963-22.jpg"] },
+    ];
+    /* ============================================================ */
+
+
+    // ----- گرفتن المنت‌ها -----
+    const screen1 = document.getElementById("screen1");
+    const screen2 = document.getElementById("screen2");
+    const screen3 = document.getElementById("screen3");
+    const screen4 = document.getElementById("screen4");
+    const screen5 = document.getElementById("screen5");
+    const birthdayInput = document.getElementById("birthday");
+    const errorBox = document.getElementById("error");
+
+    const slider = document.getElementById("slider");
+    const track = document.getElementById("track");
+    const counter = document.getElementById("counter");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+
+    // ----- تغییر صفحه -----
+    function showScreen(screen) {
+      [screen1, screen2, screen3, screen4, screen5].forEach(function (s) {
+        s.classList.remove("active");
+      });
+      screen.classList.add("active");
+    }
+
+    // ----- صفحه ۱ -----
+    document.getElementById("next1").addEventListener("click", function () {
+      if (birthdayInput.value === "") {
+        errorBox.textContent = "اول یک تاریخ انتخاب کن";
+        return;
+      }
+      errorBox.textContent = "";
+
+      if (birthdayInput.value !== CORRECT_BIRTHDAY) {
+        showScreen(screen4);
+        return;
+      }
+      showScreen(screen2);
+    });
+
+    document.getElementById("retry").addEventListener("click", function () {
+      birthdayInput.value = "";
+      showScreen(screen1);
+    });
+
+    // ----- صفحه ۲ -----
+    document.getElementById("next2").addEventListener("click", function () {
+      showScreen(screen3);
+      buildFavoriteButtons();
+      document.getElementById("wish").textContent = "Happy Birthday, " + FRIEND_NAME + "! 🎉";
+      launchConfetti();
+    });
+
+    // ----- ساختن دکمه‌های علاقه‌مندی‌ها -----
+    function buildFavoriteButtons() {
+      const box = document.getElementById("favorites");
+      box.innerHTML = "";
+
+      FAVORITES.forEach(function (item) {
+        const btn = document.createElement("button");
+        btn.className = "fav-btn";
+
+        const emoji = document.createElement("span");
+        emoji.className = "emoji";
+        emoji.textContent = item.emoji;
+
+        const label = document.createElement("span");
+        label.textContent = item.label;
+
+        btn.appendChild(emoji);
+        btn.appendChild(label);
+
+        // وقتی روی این دکمه کلیک شد، گالری همین آیتم باز بشه
+        btn.addEventListener("click", function () {
+          openGallery(item);
+        });
+
+        box.appendChild(btn);
+      });
+    }
+
+    // ============================================================
+    //  گالری و اسلایدر
+    // ============================================================
+    let currentIndex = 0;   // الان کدوم عکس نشون داده میشه (از صفر شروع میشه)
+    let slideCount = 0;     // کل عکس‌ها
+
+    function openGallery(item) {
+      document.getElementById("galleryTitle").textContent = item.label + ": " + item.value;
+
+      track.innerHTML = "";
+      currentIndex = 0;
+
+      // اگه عکسی نداره، یک اسلاید خالی با ایموجی میسازیم
+      const sources = item.images.length > 0 ? item.images : [null];
+      slideCount = sources.length;
+
+      sources.forEach(function (src) {
+        if (src === null) {
+          track.appendChild(makeFallback(item.emoji));
+          return;
+        }
+        const img = document.createElement("img");
+        img.src = src;
+        img.alt = item.value;
+        // اگه عکس لود نشد، با ایموجی جایگزین میشه
+        img.addEventListener("error", function () {
+          img.replaceWith(makeFallback(item.emoji));
+        });
+        track.appendChild(img);
+      });
+
+      // اگه فقط یک عکس هست، فلش‌ها لازم نیستن
+      const showArrows = slideCount > 1;
+      prevBtn.style.visibility = showArrows ? "visible" : "hidden";
+      nextBtn.style.visibility = showArrows ? "visible" : "hidden";
+
+      updateSlider();
+      showScreen(screen5);
+    }
+
+    function makeFallback(emoji) {
+      const div = document.createElement("div");
+      div.className = "slide-fallback";
+      div.textContent = emoji;
+      return div;
+    }
+
+    // رفتن به عکس بعدی (step=1) یا قبلی (step=-1)
+    function go(step) {
+      currentIndex = (currentIndex + step + slideCount) % slideCount;
+      updateSlider();
+    }
+
+    // هر بار که عکس عوض شد، track رو به چپ میلغزونیم
+    function updateSlider() {
+      track.style.transform = "translateX(" + (-currentIndex * 100) + "%)";
+      counter.textContent = (currentIndex + 1) + " / " + slideCount;
+    }
+
+    prevBtn.addEventListener("click", function () { go(-1); });
+    nextBtn.addEventListener("click", function () { go(1); });
+    document.getElementById("backBtn").addEventListener("click", function () {
+      showScreen(screen3);
+    });
+
+    // ----- کشیدن با انگشت روی گوشی (swipe) -----
+    let startX = 0;
+    slider.addEventListener("touchstart", function (e) {
+      startX = e.touches[0].clientX;
+    }, { passive: true });
+
+    slider.addEventListener("touchend", function (e) {
+      const diff = e.changedTouches[0].clientX - startX;
+      if (Math.abs(diff) > 50 && slideCount > 1) {   // حداقل ۵۰ پیکسل کشیده باشه
+        go(diff < 0 ? 1 : -1);                       // چپ = بعدی، راست = قبلی
+      }
+    }, { passive: true });
+
+    // ----- کلیدهای فلش کیبورد (برای کامپیوتر) -----
+    document.addEventListener("keydown", function (e) {
+      if (!screen5.classList.contains("active") || slideCount < 2) return;
+      if (e.key === "ArrowRight") go(1);
+      if (e.key === "ArrowLeft") go(-1);
+    });
+
+    // ----- کنفتی -----
+    function launchConfetti() {
+      const colors = ["#ffd23f", "#ff5d8f", "#3ddbd9", "#fff8e7"];
+      for (let i = 0; i < 60; i++) {
+        const piece = document.createElement("div");
+        piece.className = "confetti";
+        piece.style.left = Math.random() * 100 + "vw";
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDuration = 2 + Math.random() * 3 + "s";
+        piece.style.animationDelay = Math.random() * 1.5 + "s";
+        document.body.appendChild(piece);
+        setTimeout(function () { piece.remove(); }, 7000);
+      }
+    }
+  </script>
+</body>
+</html>
